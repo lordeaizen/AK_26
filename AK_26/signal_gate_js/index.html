@@ -1,0 +1,149 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="theme-color" content="#070a12">
+  <title>Signal Gate — Response Control</title>
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+  <div class="ambient ambient-one"></div>
+  <div class="ambient ambient-two"></div>
+  <div class="scanlines"></div>
+
+  <main id="app">
+    <!-- START -->
+    <section id="start-screen" class="screen active">
+      <div class="start-shell">
+        <div class="brand">
+          <span class="brand-mark">SG</span>
+          <span>SIGNAL GATE</span>
+        </div>
+
+        <div class="hero">
+          <div class="eyebrow">EXPERIMENT 01 / RESPONSE CONTROL</div>
+          <h1>Train your attention.<br><span>Control your response.</span></h1>
+          <p class="lead">
+            A short reaction-control task measuring how accurately you respond
+            to changing signals.
+          </p>
+
+          <div class="protocol-grid">
+            <div class="protocol-card">
+              <span class="signal-dot green"></span>
+              <div><strong>GREEN</strong><small>Click</small></div>
+            </div>
+            <div class="protocol-card">
+              <span class="signal-dot blue"></span>
+              <div><strong>BLUE</strong><small>Do not click</small></div>
+            </div>
+            <div class="protocol-card">
+              <span class="signal-dot red"></span>
+              <div><strong>RED → GREEN</strong><small>Wait, then click</small></div>
+            </div>
+          </div>
+
+          <div class="start-meta">
+            <div><span>01</span> 5 practice trials</div>
+            <div><span>02</span> 42 recorded trials</div>
+            <div><span>03</span> Reaction time is recorded</div>
+          </div>
+
+          <button id="start-btn" class="primary-btn">
+            <span>Begin Stage 1</span>
+            <b>→</b>
+          </button>
+          <p class="keyboard-hint">You can use the mouse / touch control</p>
+        </div>
+      </div>
+    </section>
+
+    <!-- GAME -->
+    <section id="game-screen" class="screen">
+      <header class="game-header">
+        <div class="brand compact">
+          <span class="brand-mark">SG</span>
+          <span>SIGNAL GATE</span>
+        </div>
+
+        <div class="progress-wrap">
+          <div class="progress-top">
+            <span id="trial-label">TRIAL 0 / 47</span>
+            <span id="status-label">READY</span>
+          </div>
+          <div class="progress-track">
+            <div id="progress-bar"></div>
+          </div>
+        </div>
+
+        <div class="stage-badge">STAGE 01</div>
+      </header>
+
+      <div id="reactor-area">
+        <div class="focus-grid"></div>
+        <div class="focus-ring ring-a"></div>
+        <div class="focus-ring ring-b"></div>
+
+        <div id="distractor-container"></div>
+
+        <div class="signal-console">
+          <div class="signal-label">
+            <span id="signal-pip"></span>
+            <span id="signal-name">STANDBY</span>
+          </div>
+
+          <button id="reactor" aria-label="Signal response">
+            <span class="reactor-core"></span>
+            <span class="reactor-glow"></span>
+            <span class="reactor-text">READY</span>
+          </button>
+        </div>
+
+        <div class="side-readout left-readout">
+          <span>RESPONSE WINDOW</span>
+          <strong>1200<span>ms</span></strong>
+        </div>
+        <div class="side-readout right-readout">
+          <span>INPUT</span>
+          <strong>CLICK</strong>
+        </div>
+      </div>
+
+      <footer class="instruction-bar">
+        <div class="instruction-line"></div>
+        <p id="instruction">Wait...</p>
+        <div class="instruction-line"></div>
+      </footer>
+    </section>
+
+    <!-- RESULTS -->
+    <section id="results-screen" class="screen">
+      <div class="results-shell">
+        <div class="results-head">
+          <div>
+            <div class="eyebrow">STAGE 01 / COMPLETE</div>
+            <h1>Response profile</h1>
+            <p>Your recorded performance from this run.</p>
+          </div>
+          <div class="complete-mark">✓</div>
+        </div>
+
+        <div id="results" class="results-grid"></div>
+
+        <div class="results-note">
+          <span>DATA STATUS</span>
+          <strong>Saved locally in this browser</strong>
+        </div>
+
+        <button id="restart-btn" class="primary-btn">
+          <span>Run Stage Again</span>
+          <b>↻</b>
+        </button>
+      </div>
+    </section>
+  </main>
+
+  <script type="module" src="main.js"></script>
+</body>
+</html>
