@@ -1,0 +1,130 @@
+<!doctype html>
+<html lang="en">
+	<head>
+		<meta charset="utf-8" />
+		<meta name="viewport" content="width=device-width, initial-scale=1" />
+		<title>Skyhaven — researcher dashboard</title>
+		<link rel="stylesheet" href="/styles.css" />
+	</head>
+	<body>
+		<div class="dash">
+			<h1>Skyhaven — researcher dashboard</h1>
+			<div class="muted">Every number below is recomputed from the raw event log on each load. Nothing is cached.</div>
+
+			<div class="notice" id="top-note">Loading…</div>
+
+			<div class="panel">
+				<h2 style="font-size: 16px; margin: 0 0 10px">Sessions</h2>
+				<table class="data" id="sessions">
+					<thead>
+						<tr><th>Session</th><th>Participant</th><th>Age band</th><th>Profile</th><th>Started</th><th>State</th><th></th></tr>
+					</thead>
+					<tbody></tbody>
+				</table>
+				<div class="btn-row">
+					<a class="btn tiny" href="/api/export/features.csv">Download features.csv</a>
+					<a class="btn tiny ghost" href="/api/export/trials.csv">Download trials.csv (all)</a>
+					<a class="btn tiny ghost" href="/api/cohort" target="_blank">Cohort JSON</a>
+					<a class="btn tiny ghost" href="/api/codebook" target="_blank">Codebook JSON</a>
+				</div>
+			</div>
+
+			<div id="detail"></div>
+		</div>
+
+		<script>
+			let CODEBOOK = {}
+
+			const MODULE_NAMES = {
+				M1: "M1 · Beacon Watch (inhibition)",
+				M2: "M2 · Wind Run (pressure)",
+				M3: "M3 · Rune Gates (frustration)",
+				M4: "M4 · Shifting Bridge (flexibility)",
+				M5: "M5 · Sky Market (provocation)",
+				M6: "M6 · Story Deck (attribution)",
+				M7: "M7 · Second Chance (retaliation)",
+			}
+			const moduleName = (id) => MODULE_NAMES[id] || id
+			const esc = (s) => String(s === null || s === undefined ? "" : s).replace(/[&<>]/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;" })[c])
+
+			async function boot() {
+				CODEBOOK = await (await fetch("/api/codebook")).json()
+				const { sessions } = await (await fetch("/api/sessions")).json()
+				const tbody = document.querySelector("#sessions tbody")
+				document.getElementById("top-note").textContent =
+					sessions.length === 0
+						? "No sessions yet. Play a session at / or run: npm run simulate"
+						: sessions.length + " session(s) stored locally. Percentiles in the cohort view are sample-relative, not norms."
+
+				tbody.innerHTML = ""
+				for (const s of sessions) {
+					const tr = document.createElement("tr")
+					const state = s.distress ? "stopped (distress)" : s.completed ? "completed" : s.endedAt ? "ended early" : "in progress"
+					tr.innerHTML =
+						'<td class="mono">' + esc(s.sessionId) + "</td><td>" + esc(s.participantId) + "</td><td>" + esc(s.ageBand) + "</td><td>" + esc(s.profile) +
+						"</td><td>" + esc(new Date(s.startedAt).toLocaleString()) + "</td><td>" + state + '</td><td><button class="btn tiny">Open</button></td>'
+					tr.querySelector("button").onclick = () => showScore(s.sessionId)
+					tbody.appendChild(tr)
+				}
+			}
+
+			function featureTable(features, prefix) {
+				const keys = Object.keys(features).filter((k) => k.indexOf(prefix + "_") === 0)
+				if (!keys.length) return ""
+				let rows = ""
+				for (const k of keys.sort()) {
+					const meta = CODEBOOK[k] || {}
+					const v = features[k]
+					rows +=
+						'<tr><td class="mono">' + esc(k) + "</td><td>" + esc(meta.label || "") + '</td><td class="mono">' + esc(typeof v === "object" ? JSON.stringify(v) : v) +
+						'</td><td class="muted">' + esc(meta.direction || "") + '</td><td class="muted">' + esc(meta.confound || "") + "</td></tr>"
+				}
+				return (
+					'<div class="panel"><h2 style="font-size:15px;margin:0 0 10px">' + moduleName(prefix.toUpperCase()) + "</h2>" +
+					'<table class="data"><thead><tr><th>Metric</th><th>Meaning</th><th>Value</th><th>Direction</th><th>Watch out for</th></tr></thead><tbody>' +
+					rows +
+					"</tbody></table></div>"
+				)
+			}
+
+			async function showScore(sessionId) {
+				const detail = document.getElementById("detail")
+				detail.innerHTML = '<div class="panel">Scoring…</div>'
+				const res = await fetch("/api/score/" + sessionId)
+				if (!res.ok) {
+					detail.innerHTML = '<div class="panel">No events recorded for this session yet.</div>'
+					return
+				}
+				const r = await res.json()
+				const q = r.qc
+				const flags = q.flags.length ? q.flags.map((f) => '<span class="flag">' + esc(f) + "</span>").join("") : '<span class="flag ok">no flags</span>'
+
+				detail.innerHTML =
+					'<div class="panel"><h2 style="font-size:16px;margin:0 0 6px">Session ' + esc(r.session.sessionId) + "</h2>" +
+					'<div class="muted">Participant ' + esc(r.session.participantId) + " · " + esc(r.session.ageBand) + " · " + esc(r.session.profile) +
+					" · " + r.event_count + " events · modules completed: " + (r.modules_completed.join(", ") || "none") + "</div>" +
+					'<div class="notice">' + esc(r.dimensions_note) + "</div>" +
+					'<div class="grid2">' +
+					"<div><h3 style=\"font-size:14px\">Quality control</h3><table class=\"data\"><tbody>" +
+					"<tr><td>Flags</td><td>" + flags + "</td></tr>" +
+					"<tr><td>Trials (excluded)</td><td>" + q.trials_total + " (" + q.trials_excluded + ", " + Math.round(q.exclusion_rate * 100) + "%)</td></tr>" +
+					"<tr><td>Exclusion reasons</td><td class=\"mono\">" + esc(JSON.stringify(q.exclusion_reasons)) + "</td></tr>" +
+					"<tr><td>Attention probe failures</td><td>" + Math.round((q.probe_fail_rate || 0) * 100) + "%</td></tr>" +
+					"<tr><td>Input lag / frame jitter</td><td>" + esc(q.input_lag_ms) + " ms / " + esc(q.frame_jitter_ms) + " ms</td></tr>" +
+					"<tr><td>Focus losses</td><td>" + q.focus_losses + "</td></tr>" +
+					"<tr><td>Split-half reliability (M1 RT)</td><td>" + esc(q.split_half_reliability) + "</td></tr>" +
+					"<tr><td>Debrief completed</td><td>" + (q.debrief_completed ? "yes" : "no") + "</td></tr>" +
+					"</tbody></table></div>" +
+					"<div><h3 style=\"font-size:14px\">Raw data</h3><div class=\"btn-row\">" +
+					'<a class="btn tiny" href="/api/export/trials.csv?session=' + encodeURIComponent(sessionId) + '">trials.csv</a>' +
+					'<a class="btn tiny ghost" href="/api/export/events.jsonl?session=' + encodeURIComponent(sessionId) + '">events.jsonl</a>' +
+					'<a class="btn tiny ghost" href="/api/score/' + encodeURIComponent(sessionId) + '" target="_blank">score JSON</a>' +
+					"</div></div></div></div>" +
+					["m1", "m2", "m3", "m4", "m5", "m6", "m7"].map((p) => featureTable(r.features, p)).join("")
+				window.scrollTo({ top: document.getElementById("detail").offsetTop - 20, behavior: "smooth" })
+			}
+
+			boot()
+		</script>
+	</body>
+</html>

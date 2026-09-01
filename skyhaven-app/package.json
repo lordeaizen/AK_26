@@ -1,0 +1,19 @@
+{
+	"name": "skyhaven",
+	"version": "1.0.0",
+	"private": true,
+	"description": "Skyhaven — gamified behavioural assessment battery (research build). Frontend + backend + scoring pipeline, zero dependencies.",
+	"main": "server.js",
+	"scripts": {
+		"start": "node server.js",
+		"dev": "node --watch server.js",
+		"score": "node scripts/score.js",
+		"simulate": "node scripts/simulate.js",
+		"check": "node --check server.js && node --check lib/store.js && node --check lib/scoring.js && node --check lib/counterbalance.js"
+	},
+	"engines": {
+		"node": ">=18"
+	},
+	"dependencies": {},
+	"license": "UNLICENSED"
+}
